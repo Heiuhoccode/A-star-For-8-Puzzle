@@ -27,7 +27,7 @@ class Node:
         return f'Ma trận {self.curr} là:{"\n"}{self.in_ma_tran(self.matrix)} h={self.h} f={self.f}'
 
 
-def output(node, Node_daduyet):
+def output(node, Nodes_daduyet):
     temp = node
     while temp.curr != 0:
         print(temp)
@@ -39,17 +39,20 @@ def output(node, Node_daduyet):
 
 
 Nodes = []
+# Nhập trạng thái đầu cuối và kiểu hàm Heuristic
 print("Nhập trạng thái ban đầu:")
 Eight_Puzzle_Origin = []
 for i in range(3):
     Eight_Puzzle_Origin.append(list(map(str,input().strip().split())))
-
-
 print("Nhập trạng thái đích:")
 Eight_Puzzle_Destination = []
 for i in range(3):
     Eight_Puzzle_Destination.append(list(map(str,input().strip().split())))
 Eight_Puzzle_Current = Eight_Puzzle_Origin
+
+# Option_Heuristic = int(input())
+
+
 # Node ban đầu
 Node_bandau = Node(Eight_Puzzle_Origin, heuristic.So_O_Dat_Sai_Cho(Eight_Puzzle_Origin,Eight_Puzzle_Destination), 0, heuristic.So_O_Dat_Sai_Cho(Eight_Puzzle_Origin,Eight_Puzzle_Destination) + 0, 0, 0)
 # phần tử 0 là ban đầu
