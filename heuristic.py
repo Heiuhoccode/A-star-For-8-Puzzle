@@ -1,4 +1,11 @@
-def heuristic_manhattan(current, goal):
+def So_O_Dat_Sai_Cho(current,goal):
+    count = 0
+    for i in range(len(goal)):
+        for j in range(len(goal[i])):
+            if current[i][j] != goal[i][j] and current[i][j]!='*': count += 1
+    return count
+
+def Khoang_Cach_Manhattan(current, goal):
     count = 0
     temp = [0,0,0,0,0,0,0,0]
     temp1 = [0,0,0,0,0,0,0,0]
