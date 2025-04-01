@@ -16,8 +16,15 @@ class Node:
         self.pre = pre
         self.curr = curr
 
+    def in_ma_tran(self, matrix):
+        result = ""
+        for i in matrix:
+            for j in i:
+                result += f"{j} "
+            result += "\n"
+        return result
     def __str__(self):
-        return f'{self.matrix} {self.h} {self.f}'
+        return f'Ma trận {self.curr} là:{"\n"}{self.in_ma_tran(self.matrix)} h={self.h} f={self.f}'
 
 
 def output(node, Node_daduyet):
@@ -28,7 +35,7 @@ def output(node, Node_daduyet):
         for i in Nodes_daduyet:
             if temp.pre == i.curr:
                 temp = i
-                break;
+                break
 
 
 Nodes = []
@@ -50,7 +57,6 @@ Nodes.append(Node_bandau)
 
 g=1 # Chi phí là 1
 name_node = 1 # tên của node
-closed_set = [] # Mảng xử lý nút lặp
 Nodes_tapbien = [] # Mảng tập biên
 Nodes_daduyet = [] # Mảng lưu các nút đã duyệt
 Nodes_tapbien.append(Node_bandau)
@@ -63,11 +69,17 @@ while len(Nodes_tapbien) > 0:
         if node.f == f_min:
             Node_duyet = node
             break
-    Nodes_tapbien.remove(Node_duyet)
+    try:
+        Nodes_tapbien.remove(Node_duyet)
+    except:
+        print("Lỗi xóa nút duyệt ra khoi tập biên")
     Nodes_daduyet.append(Node_duyet)
     # Nếu node được duyệt là nút đích thì in ra và dừng vòng lặp
     if Node_duyet.matrix == Eight_Puzzle_Destination:
-        output(Node_duyet, Nodes_daduyet)
+        try:
+            output(Node_duyet, Nodes_daduyet)
+        except:
+            print("Lỗi in ra")
         break
 
     Nodes_kecan = []  # Mảng có node kề cận của node đang duyệt
@@ -80,9 +92,11 @@ while len(Nodes_tapbien) > 0:
     # Xử lý lặp
     for node_kecan in Nodes_kecan:
         for node in Nodes_tapbien:
-            if node_kecan.matrix == node.matrix:
-                if node_kecan.f < node.f:
+            if node_kecan.matrix == node.matrix and node_kecan.f < node.f:
+                try:
                     Nodes_tapbien.remove(node)
+                except:
+                    print("Lỗi xử lý lặp")
     # Thêm vào tập biên
     for node_kecan in Nodes_kecan:
         Nodes_tapbien.append(node_kecan)
