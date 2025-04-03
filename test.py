@@ -88,7 +88,7 @@ while len(Nodes_tapbien) > 0:
     except:
         print("Lỗi xóa nút duyệt ra khoi tập biên")
     Nodes_daduyet.append(Node_duyet)
-    print(Node_duyet)
+    # print(Node_duyet)
     print("Độ dài tập biên = ", len(Nodes_tapbien))
 
     # Nếu node được duyệt là nút đích thì in ra và dừng vòng lặp
