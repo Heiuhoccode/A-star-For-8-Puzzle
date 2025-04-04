@@ -74,6 +74,7 @@ name_node = 1 # tên của node
 Nodes_tapbien = [] # Mảng tập biên
 Nodes_daduyet = [] # Mảng lưu các nút đã duyệt
 Nodes_tapbien.append(Node_bandau)
+cothexuly = 0
 while len(Nodes_tapbien) > 0:
     f_min = 1e9
     for node in Nodes_tapbien:
@@ -83,17 +84,20 @@ while len(Nodes_tapbien) > 0:
         if node.f == f_min:
             Node_duyet = node
             break
+
     try:
         Nodes_tapbien.remove(Node_duyet)
     except:
         print("Lỗi xóa nút duyệt ra khoi tập biên")
-    Nodes_daduyet.append(Node_duyet)
-    # print(Node_duyet)
-    print("Độ dài tập biên = ", len(Nodes_tapbien))
 
+    Nodes_daduyet.append(Node_duyet)
+    print(Node_duyet)
+    print("Độ dài tập biên = ", len(Nodes_tapbien))
+    print("Độ dài mảng node đã duyệt = ", len(Nodes_daduyet))
     # Nếu node được duyệt là nút đích thì in ra và dừng vòng lặp
     if Node_duyet.matrix == Eight_Puzzle_Destination:
         try:
+            cothexuly = 1
             output(Node_duyet, Nodes_daduyet)
         except:
             print("Lỗi in ra")
@@ -115,19 +119,37 @@ while len(Nodes_tapbien) > 0:
 
     # Xử lý lặp
     for node_kecan in Nodes_kecan:
-        for node in Nodes_tapbien:
-            if node_kecan.matrix == node.matrix:
-                if node_kecan.f < node.f:
+        xoanode_kecan = False
+        for node_tapbien in Nodes_tapbien:
+            if node_kecan.matrix == node_tapbien.matrix:
+                if node_kecan.f < node_tapbien.f:
                     try:
-                        Nodes_tapbien.remove(node)
+                        Nodes_tapbien.remove(node_tapbien)
                     except:
                         print("Lỗi xử lý lặp bên tập biên")
                 else:
                     try:
                         Nodes_kecan.remove(node_kecan)
+                        xoanode_kecan = True
                         break
                     except:
                         print("Lỗi xử lý lặp bên tập kề")
+        if xoanode_kecan == False:
+            for node_daduyet in Nodes_daduyet:
+                if node_kecan.matrix == node_daduyet.matrix and node_kecan.f >= node_daduyet.f:
+                    try:
+                        Nodes_kecan.remove(node_kecan)
+                        break
+                    except:
+                        print("Loi xu ly lap ben tap da duyet")
     # Thêm vào tập biên
     for node_kecan in Nodes_kecan:
         Nodes_tapbien.append(node_kecan)
+if cothexuly == 1:
+    match Option_Heuristic:
+        case 1:
+            print("Hàm heuristic Số ô đặt sai chỗ không thể xử lý")
+        case 2:
+            print("Hàm heuristic Manhattan không thể xử lý")
+        case _:
+            print("Lỗi chọn option")
