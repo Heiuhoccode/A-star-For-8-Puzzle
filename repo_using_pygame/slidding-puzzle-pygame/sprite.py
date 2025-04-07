@@ -136,3 +136,95 @@ class Dropdown:
                     return True
         
         return False
+
+class Terminal:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.lines = []
+        self.font = pygame.font.SysFont("Consolas", 16)
+        self.line_height = 20
+        self.max_visible_lines = self.height // self.line_height
+        self.scroll_offset = 0
+        self.bg_color = (30, 30, 30)
+        self.text_color = (0, 255, 0)  # Terminal green
+        self.scrollbar_color = (80, 80, 80)
+        self.scrollbar_width = 15
+        self.scrollbar_dragging = False
+        
+    def add_line(self, text):
+        self.lines.append(text)
+        # Auto-scroll to bottom when new line is added
+        if len(self.lines) > self.max_visible_lines:
+            self.scroll_offset = len(self.lines) - self.max_visible_lines
+    
+    def clear(self):
+        self.lines = []
+        self.scroll_offset = 0
+        
+    def draw(self, screen):
+        # Draw terminal background
+        pygame.draw.rect(screen, self.bg_color, (self.x, self.y, self.width, self.height))
+        pygame.draw.rect(screen, (100, 100, 100), (self.x, self.y, self.width, self.height), 2)
+        
+        # Draw visible lines
+        visible_lines = self.lines[self.scroll_offset:self.scroll_offset + self.max_visible_lines]
+        for i, line in enumerate(visible_lines):
+            text_surf = self.font.render(line, True, self.text_color)
+            screen.blit(text_surf, (self.x + 10, self.y + i * self.line_height + 5))
+        
+        # Draw scrollbar if needed
+        if len(self.lines) > self.max_visible_lines:
+            # Draw scrollbar background
+            pygame.draw.rect(screen, (50, 50, 50), 
+                            (self.x + self.width - self.scrollbar_width, self.y, 
+                             self.scrollbar_width, self.height))
+            
+            # Calculate scrollbar position and size
+            total_content_height = len(self.lines) * self.line_height
+            visible_ratio = min(1.0, self.height / total_content_height)
+            scrollbar_height = max(20, int(self.height * visible_ratio))
+            
+            scroll_position_ratio = self.scroll_offset / max(1, len(self.lines) - self.max_visible_lines)
+            scrollbar_position = int(self.y + scroll_position_ratio * (self.height - scrollbar_height))
+            
+            # Draw scrollbar handle
+            pygame.draw.rect(screen, self.scrollbar_color, 
+                            (self.x + self.width - self.scrollbar_width, scrollbar_position, 
+                             self.scrollbar_width, scrollbar_height))
+    
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 4:  # Scroll up
+                self.scroll_up()
+            elif event.button == 5:  # Scroll down
+                self.scroll_down()
+            elif event.button == 1:  # Left click - check for scrollbar drag
+                mouse_x, mouse_y = event.pos
+                if (self.x + self.width - self.scrollbar_width <= mouse_x <= self.x + self.width and
+                    self.y <= mouse_y <= self.y + self.height):
+                    self.scrollbar_dragging = True
+        
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:  # Left mouse button released
+                self.scrollbar_dragging = False
+                
+        elif event.type == pygame.MOUSEMOTION and self.scrollbar_dragging:
+            _, mouse_y = event.pos
+            # Calculate new scroll position
+            total_lines = max(1, len(self.lines))
+            scrollable_lines = max(0, total_lines - self.max_visible_lines)
+            
+            # Map mouse position to scroll position
+            relative_y = mouse_y - self.y
+            scroll_ratio = max(0, min(1, relative_y / self.height))
+            self.scroll_offset = int(scroll_ratio * scrollable_lines)
+    
+    def scroll_up(self):
+        self.scroll_offset = max(0, self.scroll_offset - 1)
+    
+    def scroll_down(self):
+        max_offset = max(0, len(self.lines) - self.max_visible_lines)
+        self.scroll_offset = min(max_offset, self.scroll_offset + 1)

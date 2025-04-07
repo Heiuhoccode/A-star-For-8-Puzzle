@@ -36,6 +36,9 @@ class Game:
         self.input_error = ""
         self.used_numbers = set()
         self.input_matrix_active = True  # True for initial matrix, False for goal matrix
+        
+        # Terminal for solution steps
+        self.terminal = Terminal(0, GAME_SIZE * TILESIZE + 200, WIDTH / 3, TERMINAL_HEIGHT)
 
     def get_high_scores(self):
         with open("high_score.txt", "r") as file:
@@ -97,6 +100,10 @@ class Game:
         # Get the target state (completed grid)
         goal_state = self.tiles_grid_completed
         
+        # Clear previous solution steps
+        self.terminal.clear()
+        self.terminal.add_line("Starting A* search with heuristic: " + self.current_heuristic)
+        
         # Measure execution time
         start_time = time.time()
         
@@ -109,13 +116,26 @@ class Game:
         self.solution_index = 0
         self.show_solution = True
         
-        # Save the results to a file
-        self.save_solve_data(self.tiles_grid, goal_state, self.current_heuristic, self.astar_execution_time)
+        # Output solution info to terminal
+        if len(self.solution_path) > 0:
+            self.terminal.add_line(f"Solution found with {len(self.solution_path)} steps!")
+            self.terminal.add_line(f"Execution time: {self.astar_execution_time:.6f} seconds")
+            self.terminal.add_line("Use Next/Previous buttons to navigate through solution")
+            self.terminal.add_line("-" * 50)
+            
+            # Display the initial state
+            self.terminal.add_line("Initial state:")
+            self._add_state_to_terminal(self.tiles_grid)
+        else:
+            self.terminal.add_line("No solution found!")
+        
+        # Save the results to a file (keep this intact)
+        self.save_solve_data(self.tiles_grid, goal_state, self.current_heuristic, self.astar_execution_time, len(self.solution_path))
         
         # If solution found, return True
         return len(self.solution_path) > 0
         
-    def save_solve_data(self, initial_state, goal_state, heuristic, exec_time):
+    def save_solve_data(self, initial_state, goal_state, heuristic, exec_time, steps_number):
         # Convert 2D matrices to 1D arrays for saving
         initial_flat = []
         for row in initial_state:
@@ -126,18 +146,29 @@ class Game:
             goal_flat.extend(row)
             
         # Format the data as: heuristic,execution_time,initial_state,goal_state
-        data_line = f"{heuristic},{exec_time:.6f},{initial_flat},{goal_flat}\n"
+        data_line = f"{heuristic},{exec_time:.6f},{steps_number},{initial_flat},{goal_flat}\n"
         
         # Append to file
         with open("astar_results.txt", "a") as file:
             file.write(data_line)
+            
+    def _add_state_to_terminal(self, state):
+        """Add a formatted state representation to the terminal"""
+        for row in state:
+            line = "| " + " | ".join([str(cell) if cell != 0 else " " for cell in row]) + " |"
+            self.terminal.add_line(line)
+        self.terminal.add_line("")  # Add empty line after state
 
     def apply_solution_step(self, step_index):
         if 0 <= step_index < len(self.solution_path):
             # Apply the solution state at the given index
-            _, state = self.solution_path[step_index]
+            move, state = self.solution_path[step_index]
             self.tiles_grid = [row[:] for row in state]  # Deep copy
             self.draw_tiles()
+            
+            # Add move info to terminal
+            self.terminal.add_line(f"Step {step_index + 1}: Move '{move}'")
+            self._add_state_to_terminal(state)
             
     def next_solution_step(self):
         if self.solution_index < len(self.solution_path) - 1:
@@ -389,6 +420,11 @@ class Game:
         self.input_goal_matrix = [[-1 for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
         self.current_input_pos = [0, 0]
         
+        # Initialize terminal with welcome message
+        self.terminal.clear()
+        self.terminal.add_line("Welcome to Sliding Puzzle Solver")
+        self.terminal.add_line("Use 'Solve' button to find solution with A* algorithm")
+        
         self.draw_tiles()
 
     def run(self):
@@ -461,6 +497,9 @@ class Game:
             
             UIElement(550, 35, "%.3f" % self.elapsed_time).draw(self.screen)
             UIElement(430, 300, "High Score - %.3f" % (self.high_score if self.high_score > 0 else 0)).draw(self.screen)
+            
+            # Draw terminal
+            self.terminal.draw(self.screen)
         
         pygame.display.flip()
 
@@ -469,6 +508,9 @@ class Game:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit(0)
+
+            # Handle terminal scrolling events
+            self.terminal.handle_event(event)
 
             # Handle matrix input mode
             if self.input_mode:
@@ -509,6 +551,9 @@ class Game:
                             self.show_solution = False
                             self.solution_path = []
                             self.solution_index = -1
+                            # Add message to terminal
+                            self.terminal.clear()
+                            self.terminal.add_line("Shuffling puzzle...")
                         if button.text == "Reset":
                             self.new()
                         if button.text == "Solve":
