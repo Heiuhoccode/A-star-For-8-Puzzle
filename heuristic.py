@@ -22,3 +22,4 @@ def Khoang_Cach_Manhattan(current, goal):
     for i in range(len(temp)):
         count += temp[i] + temp1[i]
     return count
+# def Euclide()

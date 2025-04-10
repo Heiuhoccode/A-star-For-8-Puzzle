@@ -3,7 +3,7 @@
 # f = g + h
 # các trạng thái đều có h,g,f
 # vòng lặp vô tận: điều kiện chọn là f nhỏ nhất, điều kiện dừng là h = 0
-import process, heuristic
+import process, heuristic, ngoaile
 
 class Node:
     def __init__(self, matrix, h, g, f, pre, curr):
@@ -46,14 +46,21 @@ print("Nhập trạng thái đích:")
 Eight_Puzzle_Destination = []
 for i in range(3):
     Eight_Puzzle_Destination.append(list(map(str,input().strip().split())))
-Eight_Puzzle_Current = Eight_Puzzle_Origin
+
+# Xét trường hợp không có lời giải
+if ngoaile.khongthegiai(Eight_Puzzle_Origin,Eight_Puzzle_Destination):
+    print(f'Thuật toán A* không thể giải trường hợp này do parity_origin != parity_goal: ({ngoaile.parity(Eight_Puzzle_Origin)}!={ngoaile.parity(Eight_Puzzle_Destination)})')
+    exit()
+else:
+    print(f'Thuật toán A* giải được trường hợp này')
 
 # Biến lựa chọn hàm Heuristic
-
 print("Lựa chọn hàm Heuristic:")
 print("1. Số ô đặt sai chỗ")
 print("2. Khoảng cách Manhattan")
 Option_Heuristic = int(input())
+
+# Node ban đầu
 Node_bandau = Node(Eight_Puzzle_Origin,0,0,0,0,0)
 match Option_Heuristic:
     case 1:
@@ -64,15 +71,12 @@ match Option_Heuristic:
                            heuristic.Khoang_Cach_Manhattan(Eight_Puzzle_Origin, Eight_Puzzle_Destination) + 0, 0, 0)
     case _:
         print("Lỗi chọn option")
-# Node ban đầu
-
-# phần tử 0 là ban đầu
-Nodes.append(Node_bandau)
 
 g=1 # Chi phí là 1
 name_node = 1 # tên của node
 Nodes_tapbien = [] # Mảng tập biên
 Nodes_daduyet = [] # Mảng lưu các nút đã duyệt
+
 Nodes_tapbien.append(Node_bandau)
 cothexuly = 0
 while len(Nodes_tapbien) > 0:
@@ -91,9 +95,9 @@ while len(Nodes_tapbien) > 0:
         print("Lỗi xóa nút duyệt ra khoi tập biên")
 
     Nodes_daduyet.append(Node_duyet)
-    print(Node_duyet)
-    print("Độ dài tập biên = ", len(Nodes_tapbien))
-    print("Độ dài mảng node đã duyệt = ", len(Nodes_daduyet))
+    # print(Node_duyet)
+    # print("Độ dài tập biên = ", len(Nodes_tapbien))
+    # print("Độ dài mảng node đã duyệt = ", len(Nodes_daduyet))
     # Nếu node được duyệt là nút đích thì in ra và dừng vòng lặp
     if Node_duyet.matrix == Eight_Puzzle_Destination:
         try:
@@ -145,7 +149,7 @@ while len(Nodes_tapbien) > 0:
     # Thêm vào tập biên
     for node_kecan in Nodes_kecan:
         Nodes_tapbien.append(node_kecan)
-if cothexuly == 1:
+if cothexuly == 0:
     match Option_Heuristic:
         case 1:
             print("Hàm heuristic Số ô đặt sai chỗ không thể xử lý")
