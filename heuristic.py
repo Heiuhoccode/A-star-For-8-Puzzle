@@ -74,7 +74,7 @@ def build_pdb(matrix):
         current, cost = queue.popleft()
         blanks = []
         for i in range(len(current)):
-            for j in range(i + 1):
+            for j in range(len(current[i])):
                 if current[i][j] == '*':
                     blank_position = (i, j)
                     blanks.append(blank_position)
@@ -91,22 +91,22 @@ def PatternDatabase(current, goal):
     goal_A, goal_B = SplitMatrix(goal)
 
     heuristic_value = build_pdb(goal_B).get(tuple(map(tuple, current_B))) + build_pdb(goal_A).get(tuple(map(tuple, current_A)))
-    # for i in goal_B:
+    # for i in goal_A:
     #     for j in i:
     #         print(j, end=' ')
     #     print()
     # print()
-    # for i in current_B:
+    # for i in current_A:
     #     for j in i:
     #         print(j, end=' ')
     #     print()
     # print(build_pdb(goal_A).get(tuple(map(tuple, current_A)), "not found"), len(build_pdb(goal_A)))
     # print(build_pdb(goal_B).get(tuple(map(tuple, current_B)),"not found"), len(build_pdb(goal_B)))
     #
-    # for i in build_pdb(goal_B):
+    # for i in build_pdb(goal_A):
     #     print(i)
     return heuristic_value
-
-# current = [['1', '2', '3'],['5', '*', '6'],['4', '7', '8']]
+#
+# current = [['5', '*', '4'],['7', '8', '2'],['3', '6', '1']]
 # goal = [['1','2','3'],['4','5','6'],['7','8','*']]
 # PatternDatabase(current,goal)

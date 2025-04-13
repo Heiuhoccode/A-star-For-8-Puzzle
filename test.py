@@ -3,6 +3,8 @@
 # f = g + h
 # các trạng thái đều có h,g,f
 # vòng lặp vô tận: điều kiện chọn là f nhỏ nhất, điều kiện dừng là h = 0
+import time
+
 import process, heuristic, ngoaile
 
 class Node:
@@ -60,6 +62,8 @@ print("1. Số ô đặt sai chỗ")
 print("2. Khoảng cách Manhattan")
 print("3. Pattern Database")
 Option_Heuristic = int(input())
+
+start = time.time()
 
 # Node ban đầu
 Node_bandau = Node(Eight_Puzzle_Origin,0,0,0,0,0)
@@ -173,3 +177,14 @@ if cothexuly == 0:
             print("Hàm heuristic Manhattan không thể xử lý")
         case _:
             print("Lỗi chọn option")
+end = time.time()
+elapsed = end-start
+match Option_Heuristic:
+    case 1:
+        print(f'Thời gian Số ô đặt sai chỗ chạy là: {elapsed:.10f}')
+    case 2:
+        print(f'Thời gian Manhattan chạy là: {elapsed:.10f}')
+    case 3:
+        print(f'Thời gian PatternDatabase chạy là: {elapsed:.10f}')
+    case _:
+        print("Lỗi chọn option")
