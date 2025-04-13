@@ -58,6 +58,7 @@ else:
 print("Lựa chọn hàm Heuristic:")
 print("1. Số ô đặt sai chỗ")
 print("2. Khoảng cách Manhattan")
+print("3. Pattern Database")
 Option_Heuristic = int(input())
 
 # Node ban đầu
@@ -69,6 +70,9 @@ match Option_Heuristic:
     case 2:
         Node_bandau = Node(Eight_Puzzle_Origin, heuristic.Khoang_Cach_Manhattan(Eight_Puzzle_Origin, Eight_Puzzle_Destination), 0,
                            heuristic.Khoang_Cach_Manhattan(Eight_Puzzle_Origin, Eight_Puzzle_Destination) + 0, 0, 0)
+    case 3:
+        Node_bandau = Node(Eight_Puzzle_Origin, heuristic.PatternDatabase(Eight_Puzzle_Origin, Eight_Puzzle_Destination),0,
+                           heuristic.PatternDatabase(Eight_Puzzle_Origin, Eight_Puzzle_Destination) + 0, 0, 0)
     case _:
         print("Lỗi chọn option")
 
@@ -98,6 +102,7 @@ while len(Nodes_tapbien) > 0:
     # print(Node_duyet)
     # print("Độ dài tập biên = ", len(Nodes_tapbien))
     # print("Độ dài mảng node đã duyệt = ", len(Nodes_daduyet))
+
     # Nếu node được duyệt là nút đích thì in ra và dừng vòng lặp
     if Node_duyet.matrix == Eight_Puzzle_Destination:
         try:
@@ -113,9 +118,20 @@ while len(Nodes_tapbien) > 0:
         node_kecan = Node(matrix, 0,0,0,0,0)
         match Option_Heuristic:
             case 1:
-                node_kecan = Node(matrix, heuristic.So_O_Dat_Sai_Cho(matrix, Eight_Puzzle_Destination), g, Node_duyet.f - Node_duyet.h + g + heuristic.So_O_Dat_Sai_Cho(matrix, Eight_Puzzle_Destination), Node_duyet.curr, name_node)
+                node_kecan = Node(matrix,
+                                  heuristic.So_O_Dat_Sai_Cho(matrix, Eight_Puzzle_Destination), g,
+                                  Node_duyet.f - Node_duyet.h + g + heuristic.So_O_Dat_Sai_Cho(matrix, Eight_Puzzle_Destination),
+                                  Node_duyet.curr, name_node)
             case 2:
-                node_kecan = Node(matrix, heuristic.Khoang_Cach_Manhattan(matrix, Eight_Puzzle_Destination), g, Node_duyet.f - Node_duyet.h + g + heuristic.Khoang_Cach_Manhattan(matrix, Eight_Puzzle_Destination), Node_duyet.curr, name_node)
+                node_kecan = Node(matrix,
+                                  heuristic.Khoang_Cach_Manhattan(matrix, Eight_Puzzle_Destination), g,
+                                  Node_duyet.f - Node_duyet.h + g + heuristic.Khoang_Cach_Manhattan(matrix, Eight_Puzzle_Destination),
+                                  Node_duyet.curr, name_node)
+            case 3:
+                node_kecan = Node(matrix,
+                                  heuristic.PatternDatabase(matrix, Eight_Puzzle_Destination), g,
+                                  Node_duyet.f - Node_duyet.h + g + heuristic.PatternDatabase(matrix,Eight_Puzzle_Destination),
+                                  Node_duyet.curr, name_node)
             case _:
                 print("Lỗi chọn option")
         name_node += 1
