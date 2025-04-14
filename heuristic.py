@@ -110,3 +110,29 @@ def PatternDatabase(current, goal):
 # current = [['5', '*', '4'],['7', '8', '2'],['3', '6', '1']]
 # goal = [['1','2','3'],['4','5','6'],['7','8','*']]
 # PatternDatabase(current,goal)
+# Hàm tính Edge Matching Heuristic
+def Edge_Matching_Heuristic(current, goal):
+    count = 0
+    # Duyệt qua tất cả các viên gạch trong ma trận
+    for i in range(len(current)):
+        for j in range(len(current[i])):
+            if current[i][j] == '*':  # Bỏ qua ô trống
+                continue
+            
+            # Tìm vị trí của viên gạch trong goal
+            target_pos = [(index, row.index(current[i][j])) for index, row in enumerate(goal) if current[i][j] in row][0]
+            target_x, target_y = target_pos
+
+            # So sánh cạnh của viên gạch trong current với goal
+            # Kiểm tra các cạnh trái, phải, trên, dưới
+            # Nếu các cạnh không khớp, tính chi phí
+            if i > 0 and current[i-1][j] != goal[i-1][j]:  # Cạnh trên
+                count += 1
+            if i < len(current)-1 and current[i+1][j] != goal[i+1][j]:  # Cạnh dưới
+                count += 1
+            if j > 0 and current[i][j-1] != goal[i][j-1]:  # Cạnh trái
+                count += 1
+            if j < len(current[i])-1 and current[i][j+1] != goal[i][j+1]:  # Cạnh phải
+                count += 1
+
+    return count
