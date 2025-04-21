@@ -25,6 +25,12 @@ class Game:
         self.parity_result_2 = ""
         self.result_data = None  # để chứa kết quả từ solver thread
         self.buttons = pygame.sprite.Group()
+        self.current_screen = "main"  # Track current screen
+        self.compare_heuristics = []  # List of selected heuristics for comparison
+        self.compare_results = []  # Results from different heuristics
+        self.compare_current_step = {}  # Current step for each heuristic
+        self.running = True  # Flag to control all threads
+        self.solver_threads = []  # Keep track of all solver threads
         self.create_buttons()
 
     def create_buttons(self):
@@ -38,11 +44,33 @@ class Game:
             self.set_heuristic
         )
         self.solve_button = Button(GAME_SIZE*TILESIZE + 50 + 120 + 120 + 160 + 140, 20, 100, 40, "Solve", self.solve)
+        self.compare_button = Button(GAME_SIZE*TILESIZE + 50, 70, 180, 40, "Compare Heuristic", self.show_compare_screen)
+        
         # Thêm các nút vào group
         self.buttons.add(self.shuffle_button)
         self.buttons.add(self.check_parity_button)
         self.buttons.add(self.solve_button)
         self.buttons.add(self.setup_button)
+        self.buttons.add(self.compare_button)
+        
+        # Buttons for compare screen
+        self.compare_screen_buttons = pygame.sprite.Group()
+        self.back_button = Button(20, 20, 100, 40, "Back", self.back_to_main)
+        self.start_compare_button = Button(WIDTH - 150, HEIGHT - 60, 130, 40, "Start Compare", self.start_compare)
+        self.compare_screen_buttons.add(self.back_button)
+        self.compare_screen_buttons.add(self.start_compare_button)
+        
+        # Checkboxes for selecting heuristics to compare
+        self.checkboxes = pygame.sprite.Group()
+        heuristics = ["Misplaced", "Manhattan", "Pattern DB", "Edge Match"]
+        for i, h in enumerate(heuristics):
+            cb = Checkbox(WIDTH // 2 - 100, 150 + i * 60, 200, 40, h)
+            self.checkboxes.add(cb)
+        
+        # Results screen buttons
+        self.results_screen_buttons = pygame.sprite.Group()
+        self.back_to_compare_button = Button(20, 20, 150, 40, "Back to Compare", self.back_to_compare)
+        self.results_screen_buttons.add(self.back_to_compare_button)
 
     def create_game(self):
         grid = [[0 for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
@@ -124,32 +152,58 @@ class Game:
 
     def draw(self):
         self.screen.fill(GRAY_LIGHT)
-        self.all_sprites.draw(self.screen)
+        
+        if self.current_screen == "main":
+            self.all_sprites.draw(self.screen)
+            
+            # Lưới 1
+            self.draw_label("Trạng thái bắt đầu", y=60)
+            self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_y=80)
+            self.draw_grid_lines(offset_y=80)
 
-        # Lưới 1
-        self.draw_label("Trạng thái bắt đầu", y=60)
-        self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_y=80)
-        self.draw_grid_lines(offset_y=80)
+            # Kết quả parity lưới 1
+            if self.parity_result_1:
+                self.draw_label(f"Parity: {self.parity_result_1}", y=80 + GAME_SIZE * TILESIZE + 20,
+                                x=70)
 
-        # Kết quả parity lưới 1
-        if self.parity_result_1:
-            self.draw_label(f"Parity: {self.parity_result_1}", y=80 + GAME_SIZE * TILESIZE + 20,
-                            x=70)
+            # Lưới 2
+            offset2_y = 100 + GAME_SIZE * TILESIZE + 60
+            self.draw_label("Trạng thái đích", y=offset2_y - 20)
+            self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_y=offset2_y)
+            self.draw_grid_lines(offset_y=offset2_y)
 
-        # Lưới 2
-        offset2_y = 100 + GAME_SIZE * TILESIZE + 60
-        self.draw_label("Trạng thái đích", y=offset2_y - 20)
-        self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_y=offset2_y)
-        self.draw_grid_lines(offset_y=offset2_y)
+            # Kết quả parity lưới 2
+            if self.parity_result_2:
+                self.draw_label(f"Parity: {self.parity_result_2}", y=offset2_y + GAME_SIZE * TILESIZE + 20,
+                                x=70)
 
-        # Kết quả parity lưới 2
-        if self.parity_result_2:
-            self.draw_label(f"Parity: {self.parity_result_2}", y=offset2_y + GAME_SIZE * TILESIZE + 20,
-                            x=70)
-
-        self.buttons.draw(self.screen)
-        self.heuristic_dropdown.draw(self.screen)
-
+            self.buttons.draw(self.screen)
+            self.heuristic_dropdown.draw(self.screen)
+            
+        elif self.current_screen == "compare":
+            # Draw compare screen UI
+            title_font = pygame.font.SysFont("Consolas", 30, bold=True)
+            title = title_font.render("Select Heuristics to Compare", True, BLACK)
+            self.screen.blit(title, (WIDTH//2 - title.get_width()//2, 80))
+            
+            # Draw checkboxes
+            self.checkboxes.draw(self.screen)
+            
+            # Draw compare screen buttons
+            self.compare_screen_buttons.draw(self.screen)
+            
+            # Draw current puzzle matrices
+            self.draw_label("Current Starting State:", y=350)
+            self.draw_small_grid(self.tiles_grid, x=WIDTH//3 - 80, y=380)
+            
+            self.draw_label("Current Goal State:", y=350, x=WIDTH*2//3)
+            self.draw_small_grid(self.tiles_grid_2, x=WIDTH*2//3 - 80, y=380)
+            
+        elif self.current_screen == "results":
+            # Draw results UI
+            self.results_screen_buttons.draw(self.screen)
+            self.draw_comparison_results()
+            
         if self.notification_text and time.time() < self.notification_timer:
             font = pygame.font.SysFont("Consolas", 24, bold=True)
             text_surface = font.render(self.notification_text, True, WHITE)
@@ -199,21 +253,43 @@ class Game:
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.stop_solver_threads()  # Stop all threads before exiting
                 pygame.quit()
                 quit(0)
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
-                self.select_tile(mx, my)
-                self.heuristic_dropdown.handle_event(event)
+                
+                if self.current_screen == "main":
+                    self.select_tile(mx, my)
+                    self.heuristic_dropdown.handle_event(event)
+                    for button in self.buttons:
+                        if button.click(mx, my) and button.action:
+                            button.action()
+                            
+                elif self.current_screen == "compare":
+                    for button in self.compare_screen_buttons:
+                        if button.click(mx, my) and button.action:
+                            button.action()
+                    for checkbox in self.checkboxes:
+                        if checkbox.click(mx, my):
+                            checkbox.toggle()
+                            
+                elif self.current_screen == "results":
+                    for button in self.results_screen_buttons:
+                        if button.click(mx, my) and button.action:
+                            button.action()
+                    
+                    # Handle next/previous buttons for each heuristic result
+                    for i, result in enumerate(self.compare_results):
+                        if result and 'next_button' in result and result['next_button'].click(mx, my):
+                            self.next_step(result['heuristic'])
+                        if result and 'prev_button' in result and result['prev_button'].click(mx, my):
+                            self.prev_step(result['heuristic'])
 
-                for button in self.buttons:
-                    if button.click(mx, my) and button.action:
-                        button.action()
-            elif event.type == pygame.KEYDOWN and self.selected_tile:
+            elif event.type == pygame.KEYDOWN and self.selected_tile and self.current_screen == "main":
                 if event.unicode.isdigit() and event.unicode != "0":
                     self.update_tile_value(int(event.unicode))
-
                 elif event.key == pygame.K_BACKSPACE:  # Xóa nội dung khi nhấn Backspace
                     self.update_tile_value(0)  # Cập nhật nội dung ô là rỗng
 
@@ -238,17 +314,27 @@ class Game:
             return
 
         self.show_notification("Đang giải...")
-        threading.Thread(target=self.run_solve).start()
+        solver_thread = threading.Thread(target=self.run_solve)
+        solver_thread.daemon = True  # Make thread exit when main program exits
+        self.solver_threads.append(solver_thread)
+        solver_thread.start()
 
     def run_solve(self):
+        if not self.running:
+            return  # Exit if game is shutting down
+            
         start_time = time.time()
 
         # Giả sử bạn có hàm a_star_search(start_grid, goal_grid, heuristic)
         path, chiphi = a_star_search(self.tiles_grid, self.tiles_grid_2, self.current_heuristic)
+        
+        if not self.running:
+            return  # Check again if game is shutting down
+            
         path = path[::-1]
         elapsed_time = time.time() - start_time
 
-        self.result_data = (path,chiphi, elapsed_time)
+        self.result_data = (path, chiphi, elapsed_time)
 
     def heuristic(self):
         print("Heuristic clicked!")
@@ -311,6 +397,202 @@ class Game:
     def show_notification(self, message, duration=2):
         self.notification_text = message
         self.notification_timer = time.time() + duration  # thời gian kết thúc hiển thị
+
+    def show_compare_screen(self):
+        """Switch to the compare screen"""
+        self.current_screen = "compare"
+        # Reset selected heuristics
+        for checkbox in self.checkboxes:
+            checkbox.checked = False
+            
+    def back_to_main(self):
+        """Return to the main screen"""
+        self.current_screen = "main"
+        # Stop all solver threads
+        self.stop_solver_threads()
+        # Reset checkboxes
+        for checkbox in self.checkboxes:
+            checkbox.checked = False
+            checkbox.update_image()
+            
+    def back_to_compare(self):
+        """Return to the compare screen from results"""
+        self.current_screen = "compare"
+        self.compare_results = []
+        # Stop all solver threads
+        self.stop_solver_threads()
+        
+    def stop_solver_threads(self):
+        """Stop all running solver threads"""
+        self.running = False  # Signal threads to terminate
+        # Wait for all threads to finish
+        for thread in self.solver_threads:
+            if thread.is_alive():
+                thread.join(0.1)  # Give a short timeout
+        self.solver_threads = []  # Clear the list
+        self.running = True  # Reset flag for future threads
+
+    def start_compare(self):
+        """Start comparison of selected heuristics"""
+        selected = [cb.text for cb in self.checkboxes if cb.checked]
+        if not selected:
+            self.show_notification("Please select at least one heuristic")
+            return
+            
+        if not self.is_valid_grid(self.tiles_grid) or not self.is_valid_grid(self.tiles_grid_2):
+            self.show_notification("Invalid puzzle configuration")
+            return
+            
+        self.compare_heuristics = selected
+        self.current_screen = "results"
+        self.compare_results = []
+        self.compare_current_step = {}
+        
+        # Stop any existing solver threads
+        self.stop_solver_threads()
+        
+        # Start a solver thread for each selected heuristic
+        for heuristic in selected:
+            solver_thread = threading.Thread(target=self.run_compare_solve, args=(heuristic,))
+            solver_thread.daemon = True
+            self.solver_threads.append(solver_thread)
+            solver_thread.start()
+            
+    def run_compare_solve(self, heuristic_name):
+        """Run A* algorithm with the specified heuristic"""
+        if not self.running:
+            return  # Exit if game is shutting down
+            
+        start_time = time.time()
+        path, chiphi = a_star_search(self.tiles_grid, self.tiles_grid_2, heuristic_name)
+        
+        if not self.running:
+            return  # Check again if game is shutting down
+            
+        elapsed_time = time.time() - start_time
+        
+        # Store result
+        result = {
+            'heuristic': heuristic_name,
+            'path': path[::-1] if path else None,
+            'cost': chiphi,
+            'time': elapsed_time,
+            'nodes_visited': len(path) if path else 0,
+            'current_step': 0
+        }
+        
+        self.compare_current_step[heuristic_name] = 0
+        self.compare_results.append(result)
+        
+    def draw_small_grid(self, grid_data, x, y):
+        """Draw a small representation of a grid"""
+        cell_size = 30
+        for row in range(GAME_SIZE):
+            for col in range(GAME_SIZE):
+                rect = pygame.Rect(x + col * cell_size, y + row * cell_size, cell_size, cell_size)
+                pygame.draw.rect(self.screen, WHITE, rect)
+                pygame.draw.rect(self.screen, BLACK, rect, 1)
+                
+                # Draw number
+                if grid_data[row][col] != 0:
+                    font = pygame.font.SysFont("Consolas", 20)
+                    text = font.render(str(grid_data[row][col]), True, BLACK)
+                    text_rect = text.get_rect(center=rect.center)
+                    self.screen.blit(text, text_rect)
+                    
+    def draw_comparison_results(self):
+        """Draw the comparison results screen"""
+        if not self.compare_results:
+            font = pygame.font.SysFont("Consolas", 24)
+            text = font.render("Running comparison...", True, BLACK)
+            self.screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2))
+            return
+            
+        num_heuristics = len(self.compare_heuristics)
+        
+        if num_heuristics == 1:
+            grid_size = (1, 1)
+        elif num_heuristics <= 2:
+            grid_size = (1, 2)
+        elif num_heuristics <= 4:
+            grid_size = (2, 2)
+        elif num_heuristics <= 6:
+            grid_size = (2, 3)
+        else:
+            grid_size = (3, 3)  # Maximum 9 heuristics
+            
+        cell_width = (WIDTH - 40) // grid_size[1]
+        cell_height = (HEIGHT - 80) // grid_size[0]
+        
+        for i, result in enumerate(self.compare_results):
+            if not result:
+                continue
+                
+            row = i // grid_size[1]
+            col = i % grid_size[1]
+            
+            x = 20 + col * cell_width
+            y = 80 + row * cell_height
+            
+            # Draw cell border
+            rect = pygame.Rect(x, y, cell_width - 10, cell_height - 10)
+            pygame.draw.rect(self.screen, WHITE, rect)
+            pygame.draw.rect(self.screen, BLACK, rect, 2)
+            
+            # Draw heuristic name
+            font = pygame.font.SysFont("Consolas", 20, bold=True)
+            name_text = font.render(result['heuristic'], True, BLACK)
+            self.screen.blit(name_text, (x + 10, y + 10))
+            
+            # Draw stats
+            stats_font = pygame.font.SysFont("Consolas", 16)
+            time_text = stats_font.render(f"Time: {result['time']:.4f}s", True, BLACK)
+            nodes_text = stats_font.render(f"Nodes: {result['nodes_visited']}", True, BLACK)
+            cost_text = stats_font.render(f"Cost: {result['cost']}", True, BLACK)
+            
+            self.screen.blit(time_text, (x + 10, y + 40))
+            self.screen.blit(nodes_text, (x + 10, y + 60))
+            self.screen.blit(cost_text, (x + 10, y + 80))
+            
+            # Draw current state
+            if result['path']:
+                current_step = self.compare_current_step[result['heuristic']]
+                current_state = result['path'][current_step] if current_step < len(result['path']) else result['path'][-1]
+                self.draw_small_grid(current_state, x + (cell_width - 90) // 2, y + 110)
+                
+                # Add navigation buttons if solution exists
+                if 'next_button' not in result:
+                    result['next_button'] = Button(x + cell_width - 110, y + cell_height - 50, 80, 30, "Next", None)
+                    result['prev_button'] = Button(x + 20, y + cell_height - 50, 80, 30, "Prev", None)
+                
+                # Draw buttons
+                result['next_button'].rect.topleft = (x + cell_width - 110, y + cell_height - 50)
+                result['prev_button'].rect.topleft = (x + 20, y + cell_height - 50)
+                
+                self.screen.blit(result['next_button'].image, result['next_button'].rect)
+                self.screen.blit(result['prev_button'].image, result['prev_button'].rect)
+                
+                # Draw step counter
+                step_text = stats_font.render(f"Step {current_step + 1}/{len(result['path'])}", True, BLACK)
+                step_rect = step_text.get_rect(center=(x + cell_width // 2, y + cell_height - 35))
+                self.screen.blit(step_text, step_rect)
+            else:
+                no_solution = stats_font.render("No solution found", True, RED_DEFAULT)
+                self.screen.blit(no_solution, (x + 20, y + cell_height // 2))
+    
+    def next_step(self, heuristic):
+        """Move to the next step in the solution path"""
+        for result in self.compare_results:
+            if result['heuristic'] == heuristic and result['path']:
+                if self.compare_current_step[heuristic] < len(result['path']) - 1:
+                    self.compare_current_step[heuristic] += 1
+    
+    def prev_step(self, heuristic):
+        """Move to the previous step in the solution path"""
+        for result in self.compare_results:
+            if result['heuristic'] == heuristic and result['path']:
+                if self.compare_current_step[heuristic] > 0:
+                    self.compare_current_step[heuristic] -= 1
 
     def is_valid_grid(self, grid):
         flat = [num for row in grid for num in row]

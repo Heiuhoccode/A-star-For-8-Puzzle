@@ -116,3 +116,42 @@ class Dropdown(pygame.sprite.Sprite):
                         break
                 else:
                     self.is_open = False
+
+class Checkbox(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, text):
+        super().__init__()
+        self.image = pygame.Surface((width, height))
+        self.image.fill(WHITE)
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.text = text
+        self.font = pygame.font.SysFont("Consolas", 20)
+        self.checked = False
+        self.update_image()
+
+    def update_image(self):
+        self.image.fill(WHITE)
+        pygame.draw.rect(self.image, BLACK, (0, 0, self.rect.width, self.rect.height), 2)
+        
+        # Draw check box
+        checkbox_rect = pygame.Rect(5, self.rect.height // 2 - 10, 20, 20)
+        pygame.draw.rect(self.image, BLACK, checkbox_rect, 2)
+        
+        # If checked, draw X
+        if self.checked:
+            pygame.draw.line(self.image, BLACK, 
+                             (checkbox_rect.left + 3, checkbox_rect.top + 3), 
+                             (checkbox_rect.right - 3, checkbox_rect.bottom - 3), 2)
+            pygame.draw.line(self.image, BLACK, 
+                             (checkbox_rect.left + 3, checkbox_rect.bottom - 3), 
+                             (checkbox_rect.right - 3, checkbox_rect.top + 3), 2)
+        
+        # Draw text
+        text_surface = self.font.render(self.text, True, BLACK)
+        self.image.blit(text_surface, (35, self.rect.height // 2 - text_surface.get_height() // 2))
+
+    def click(self, mouse_x, mouse_y):
+        return self.rect.collidepoint(mouse_x, mouse_y)
+        
+    def toggle(self):
+        self.checked = not self.checked
+        self.update_image()
