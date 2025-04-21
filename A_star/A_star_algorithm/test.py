@@ -4,7 +4,7 @@
 # các trạng thái đều có h,g,f
 # vòng lặp vô tận: điều kiện chọn là f nhỏ nhất, điều kiện dừng là h = 0
 
-from A_star.A_star_algorithm import process,heuristic
+from . import process,heuristic
 
 
 class Node:
@@ -25,7 +25,7 @@ class Node:
         return result
 
     def __str__(self):
-        return f'Ma trận {self.curr} là:{"\n"}{self.in_ma_tran(self.matrix)}h = {self.h} f = {self.f}'
+        return f'Ma trận {self.curr} là:\n{self.in_ma_tran(self.matrix)}h = {self.h} f = {self.f}'
 def output(node, Nodes_daduyet, doSau):
     result = []
     temp = node

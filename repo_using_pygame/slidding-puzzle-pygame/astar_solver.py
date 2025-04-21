@@ -131,12 +131,19 @@ def solve_puzzle(initial_state, goal_state, heuristic="manhattan"):
     open_set = []
     heapq.heappush(open_set, initial_node)
     
-    # Set to keep track of visited states
-    closed_set = set()
-    closed_set.add(state_to_tuple(initial_state))
+    # Dictionary to keep track of visited states and their nodes in open set
+    open_dict = {state_to_tuple(initial_state): initial_node}
+    
+    # Dictionary to keep track of processed states and their g values
+    closed_dict = {}
     
     while open_set:
         current = heapq.heappop(open_set)
+        current_state_tuple = state_to_tuple(current.state)
+        
+        # Remove from open_dict as we're processing it now
+        if current_state_tuple in open_dict:
+            del open_dict[current_state_tuple]
         
         # Check if we've reached the goal
         if current.state == goal_state:
@@ -149,21 +156,45 @@ def solve_puzzle(initial_state, goal_state, heuristic="manhattan"):
                 node = node.parent
             return list(reversed(path))
         
+        # Add to closed dictionary with g value
+        closed_dict[current_state_tuple] = current.g
+        
         # Expand node
         for move in current.get_possible_moves():
             new_state = current.get_new_state(move)
+            new_state_tuple = state_to_tuple(new_state)
             
-            # Skip if we've already seen this state
-            if state_to_tuple(new_state) in closed_set:
-                continue
-                
             # Create new node
             child = PuzzleNode(new_state, current, move, current.depth + 1)
             child.calculate_f(goal_state, heuristic)
             
-            # Add to open set and mark as visited
-            heapq.heappush(open_set, child)
-            closed_set.add(state_to_tuple(new_state))
+            # Check if this state is in closed_dict and if we found a better path
+            if new_state_tuple in closed_dict:
+                # If new path is better, remove from closed and consider again
+                if child.g < closed_dict[new_state_tuple]:
+                    # Đường đi mới tốt hơn, loại bỏ từ closed_dict
+                    del closed_dict[new_state_tuple]
+                else:
+                    # Nếu không tìm thấy đường đi tốt hơn, bỏ qua
+                    continue
+            
+            # Check if this state is already in the open set
+            if new_state_tuple in open_dict:
+                # If we found a better path to this state, update it
+                existing_node = open_dict[new_state_tuple]
+                if child.g < existing_node.g:  # So sánh g thay vì f
+                    # Replace the old node with the new better one
+                    existing_node.parent = current
+                    existing_node.move = move
+                    existing_node.depth = current.depth + 1
+                    existing_node.g = child.g
+                    existing_node.calculate_f(goal_state, heuristic)  # Tính lại f
+                    # Reheapify
+                    heapq.heapify(open_set)
+            else:
+                # Add to open set
+                heapq.heappush(open_set, child)
+                open_dict[new_state_tuple] = child
     
     # No solution found
     return []
