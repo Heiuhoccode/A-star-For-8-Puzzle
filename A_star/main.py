@@ -72,6 +72,11 @@ class Game:
         self.back_to_compare_button = Button(20, 20, 150, 40, "Back to Compare", self.back_to_compare)
         self.results_screen_buttons.add(self.back_to_compare_button)
 
+        # Buttons for solve screen
+        self.solve_screen_buttons = pygame.sprite.Group()
+        self.back_to_main_button = Button(20, 20, 100, 40, "Back", self.back_to_main)
+        self.solve_screen_buttons.add(self.back_to_main_button)
+
     def create_game(self):
         grid = [[0 for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
         return grid
@@ -97,15 +102,14 @@ class Game:
 
     def new(self):
         self.all_sprites = pygame.sprite.Group()
-
         self.tiles_grid = self.create_game()
         self.tiles_grid_2 = self.create_game()
-
-        # 2D lists để chứa Tile object (khác với grid số)
         self.tile_objs_grid1 = [[None for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
         self.tile_objs_grid2 = [[None for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
         self.parity_result_1 = ""
         self.parity_result_2 = ""
+        self.solve_result = None
+        self.solve_current_step = 0
 
     def run(self):
         self.playing = True
@@ -121,13 +125,13 @@ class Game:
                 if tile is not None:
                     tile.selected = (tile == self.selected_tile)
         self.all_sprites.update()
-        if self.result_data:
-            steps,chiphi, elapsed = self.result_data
-            if steps is None:
-                self.show_result_window("Không tìm được lời giải.", elapsed)
-            else:
-                self.show_result_window(steps,chiphi, elapsed)
-            self.result_data = None  # reset lại để không lặp
+        # if self.result_data:
+        #     steps,chiphi, elapsed = self.result_data
+        #     if steps is None:
+        #         self.show_result_window("Không tìm được lời giải.", elapsed)
+        #     else:
+        #         self.show_result_window(steps,chiphi, elapsed)
+        #     self.result_data = None  # reset lại để không lặp
 
     def draw_grid_lines(self, offset_y=0):
         for i in range(GAME_SIZE + 1):
@@ -203,6 +207,9 @@ class Game:
             # Draw results UI
             self.results_screen_buttons.draw(self.screen)
             self.draw_comparison_results()
+        elif self.current_screen == "solve":
+            self.solve_screen_buttons.draw(self.screen)
+            self.draw_solve_results()
             
         if self.notification_text and time.time() < self.notification_timer:
             font = pygame.font.SysFont("Consolas", 24, bold=True)
@@ -286,6 +293,14 @@ class Game:
                             self.next_step(result['heuristic'])
                         if result and 'prev_button' in result and result['prev_button'].click(mx, my):
                             self.prev_step(result['heuristic'])
+                elif self.current_screen == "solve":
+                    for button in self.solve_screen_buttons:
+                        if button.click(mx, my) and button.action:
+                            button.action()
+                    if self.solve_result and 'next_button' in self.solve_result and self.solve_result['next_button'].click(mx, my):
+                        self.next_solve_step()
+                    if self.solve_result and 'prev_button' in self.solve_result and self.solve_result['prev_button'].click(mx, my):
+                        self.prev_solve_step()
 
             elif event.type == pygame.KEYDOWN and self.selected_tile and self.current_screen == "main":
                 if event.unicode.isdigit() and event.unicode != "0":
@@ -314,6 +329,9 @@ class Game:
             return
 
         self.show_notification("Đang giải...")
+        self.current_screen = "solve"  # Switch to solve screen
+        self.solve_result = None  # Reset solve result
+        self.solve_current_step = 0
         solver_thread = threading.Thread(target=self.run_solve)
         solver_thread.daemon = True  # Make thread exit when main program exits
         self.solver_threads.append(solver_thread)
@@ -331,10 +349,16 @@ class Game:
         if not self.running:
             return  # Check again if game is shutting down
             
-        path = path[::-1]
+        # path = path[::-1]
         elapsed_time = time.time() - start_time
-
-        self.result_data = (path, chiphi, elapsed_time)
+        self.solve_result = {
+            'heuristic': self.current_heuristic,
+            'path': path[::-1] if path else None,
+            'cost': chiphi,
+            'time': elapsed_time,
+            'nodes_visited': len(path) if path else 0
+        }
+        # self.result_data = (path, chiphi, elapsed_time)
 
     def heuristic(self):
         print("Heuristic clicked!")
@@ -579,7 +603,60 @@ class Game:
             else:
                 no_solution = stats_font.render("No solution found", True, RED_DEFAULT)
                 self.screen.blit(no_solution, (x + 20, y + cell_height // 2))
-    
+
+    def draw_solve_results(self):
+        if not self.solve_result:
+            font = pygame.font.SysFont("Consolas", 24)
+            text = font.render("Running solver...", True, BLACK)
+            self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2))
+            return
+
+        x = 20
+        y = 80
+        cell_width = WIDTH - 40
+        cell_height = HEIGHT - 160
+
+        rect = pygame.Rect(x, y, cell_width, cell_height)
+        pygame.draw.rect(self.screen, WHITE, rect)
+        pygame.draw.rect(self.screen, BLACK, rect, 2)
+
+        font = pygame.font.SysFont("Consolas", 20, bold=True)
+        name_text = font.render(f"Solve with {self.solve_result['heuristic']}", True, BLACK)
+        self.screen.blit(name_text, (x + 10, y + 10))
+
+        stats_font = pygame.font.SysFont("Consolas", 16)
+        time_text = stats_font.render(f"Time: {self.solve_result['time']:.4f}s", True, BLACK)
+        nodes_text = stats_font.render(f"Nodes: {self.solve_result['nodes_visited']}", True, BLACK)
+        cost_text = stats_font.render(f"Cost: {self.solve_result['cost']}", True, BLACK)
+
+        self.screen.blit(time_text, (x + 10, y + 40))
+        self.screen.blit(nodes_text, (x + 10, y + 60))
+        self.screen.blit(cost_text, (x + 10, y + 80))
+
+        if self.solve_result['path']:
+            current_state = self.solve_result['path'][self.solve_current_step] if self.solve_current_step < len(
+                self.solve_result['path']) else self.solve_result['path'][-1]
+            self.draw_small_grid(current_state, x + (cell_width - 90) // 2, y + 110)
+
+            if 'next_button' not in self.solve_result:
+                self.solve_result['next_button'] = Button(x + cell_width - 110, y + cell_height - 50, 80, 30, "Next",
+                                                          None)
+                self.solve_result['prev_button'] = Button(x + 20, y + cell_height - 50, 80, 30, "Prev", None)
+
+            self.solve_result['next_button'].rect.topleft = (x + cell_width - 110, y + cell_height - 50)
+            self.solve_result['prev_button'].rect.topleft = (x + 20, y + cell_height - 50)
+
+            self.screen.blit(self.solve_result['next_button'].image, self.solve_result['next_button'].rect)
+            self.screen.blit(self.solve_result['prev_button'].image, self.solve_result['prev_button'].rect)
+
+            step_text = stats_font.render(f"Step {self.solve_current_step + 1}/{len(self.solve_result['path'])}", True,
+                                          BLACK)
+            step_rect = step_text.get_rect(center=(x + cell_width // 2, y + cell_height - 35))
+            self.screen.blit(step_text, step_rect)
+        else:
+            no_solution = stats_font.render("No solution found", True, RED_DEFAULT)
+            self.screen.blit(no_solution, (x + 20, y + cell_height // 2))
+
     def next_step(self, heuristic):
         """Move to the next step in the solution path"""
         for result in self.compare_results:
@@ -594,29 +671,18 @@ class Game:
                 if self.compare_current_step[heuristic] > 0:
                     self.compare_current_step[heuristic] -= 1
 
+    def next_solve_step(self):
+        if self.solve_result['path'] and self.solve_current_step < len(self.solve_result['path']) - 1:
+            self.solve_current_step += 1
+
+    def prev_solve_step(self):
+        if self.solve_result['path'] and self.solve_current_step > 0:
+            self.solve_current_step -= 1
+
     def is_valid_grid(self, grid):
         flat = [num for row in grid for num in row]
         non_empty = [num for num in flat if num != 0 and num != ""]
         return len(non_empty) == GAME_SIZE * GAME_SIZE - 1
-
-    def show_result_window(self, steps,fee, elapsed_time):
-        root = tk.Tk()
-        root.title("Kết quả giải")
-
-        text = tk.Text(root, wrap=tk.WORD, width=50, height=20)
-        text.pack(padx=10, pady=10)
-
-        if isinstance(steps, str):  # Nếu là lỗi
-            text.insert(tk.END, steps)
-        else:
-            for i, step in enumerate(steps):
-                text.insert(tk.END, f"Bước {i + 1}: {step}\n")
-
-        text.insert(tk.END, f"\nThời gian chạy: {elapsed_time:.4f} giây")
-        text.insert(tk.END, f"\nChi phí: {fee}")
-        text.config(state=tk.DISABLED)
-
-        root.mainloop()
 
 game= Game()
 while True:
