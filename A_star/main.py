@@ -36,18 +36,18 @@ class Game:
     def create_buttons(self):
         """Tạo các nút"""
         self.setup_button = Button(GAME_SIZE * TILESIZE + 50, 20, 100, 40, "Setup", self.setup)
-        self.shuffle_button = Button(GAME_SIZE*TILESIZE + 50+ 120, 20, 100, 40, "Shuffle", self.shuffle)
-        self.check_parity_button = Button(GAME_SIZE*TILESIZE + 50 + 120 + 120, 20, 140, 40, "Check Parity", self.check_parity)
+
+        self.check_parity_button = Button(GAME_SIZE*TILESIZE + 50 + 120, 20, 140, 40, "Check Parity", self.check_parity)
         self.heuristic_dropdown = Dropdown(
-            GAME_SIZE * TILESIZE + 50 + 120 + 120 + 160, 20, 120, 40,
+            GAME_SIZE * TILESIZE + 50 + 120  + 160, 20, 120, 40,
             "Heuristic", [ "Misplaced", "Manhattan","Pattern DB", "Edge Match"],
             self.set_heuristic
         )
-        self.solve_button = Button(GAME_SIZE*TILESIZE + 50 + 120 + 120 + 160 + 140, 20, 100, 40, "Solve", self.solve)
-        self.compare_button = Button(GAME_SIZE*TILESIZE + 50, 70, 180, 40, "Compare Heuristic", self.show_compare_screen)
+        self.solve_button = Button(GAME_SIZE*TILESIZE + 50 + 120 + 160 + 140, 20, 100, 40, "Solve", self.solve)
+        self.compare_button = Button(GAME_SIZE*TILESIZE + 50+ 120 + 160 + 140 + 120, 20, 200, 40, "Compare Heuristic", self.show_compare_screen)
         
         # Thêm các nút vào group
-        self.buttons.add(self.shuffle_button)
+
         self.buttons.add(self.check_parity_button)
         self.buttons.add(self.solve_button)
         self.buttons.add(self.setup_button)
@@ -81,21 +81,11 @@ class Game:
         grid = [[0 for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
         return grid
 
-    def draw_tiles(self):
-        self.tiles = []
-        for row, x in enumerate(self.tiles_grid):
-            self.tiles.append([])
-            for  column, tile in enumerate(x):
-                if tile != 0:
-                    self.tiles[row].append(Tile(self,column,row,str(tile)))
-                else:
-                    self.tiles[row].append(Tile(self,column,row,"empty"))
-
-    def draw_tiles_grid(self, grid_data, tile_obj_grid, offset_y=0):
+    def draw_tiles_grid(self, grid_data, tile_obj_grid,offset_x=0, offset_y=0):
         for row_idx, row in enumerate(grid_data):
             for col_idx, val in enumerate(row):
                 text = str(val) if val != 0 else "empty"
-                tile = Tile(self, col_idx, row_idx, text, offset_y)
+                tile = Tile(self, col_idx, row_idx, text,offset_x, offset_y)
                 tile_obj_grid[row_idx][col_idx] = tile
                 tile.offset_y = offset_y
                 tile.update()
@@ -125,33 +115,26 @@ class Game:
                 if tile is not None:
                     tile.selected = (tile == self.selected_tile)
         self.all_sprites.update()
-        # if self.result_data:
-        #     steps,chiphi, elapsed = self.result_data
-        #     if steps is None:
-        #         self.show_result_window("Không tìm được lời giải.", elapsed)
-        #     else:
-        #         self.show_result_window(steps,chiphi, elapsed)
-        #     self.result_data = None  # reset lại để không lặp
 
-    def draw_grid_lines(self, offset_y=0):
+    def draw_grid_lines(self,offset_x=0, offset_y=0):
         for i in range(GAME_SIZE + 1):
             # Đường dọc
             pygame.draw.line(
                 self.screen, RED_DEFAULT,
-                (i * TILESIZE, offset_y),
-                (i * TILESIZE, offset_y + GAME_SIZE * TILESIZE), 2
+                (offset_x + i * TILESIZE, offset_y),
+                (offset_x + i * TILESIZE, offset_y + GAME_SIZE * TILESIZE), 2
             )
             # Đường ngang
             pygame.draw.line(
                 self.screen, RED_DEFAULT,
-                (0, offset_y + i * TILESIZE),
-                (GAME_SIZE * TILESIZE, offset_y + i * TILESIZE), 2
+                (offset_x, offset_y + i * TILESIZE),
+                (offset_x + GAME_SIZE * TILESIZE, offset_y + i * TILESIZE), 2
             )
 
-    def draw_label(self, text, y, x=100):
+    def draw_label(self, text, x, y):
         font = pygame.font.SysFont("Consolas", 20, bold=True)
         label_surface = font.render(text, True, BLACK)
-        label_rect = label_surface.get_rect(center=(x, y))
+        label_rect = label_surface.get_rect(center=(x+100, y))
         self.screen.blit(label_surface, label_rect)
 
     def draw(self):
@@ -161,25 +144,26 @@ class Game:
             self.all_sprites.draw(self.screen)
             
             # Lưới 1
-            self.draw_label("Trạng thái bắt đầu", y=60)
-            self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_y=80)
-            self.draw_grid_lines(offset_y=80)
+            offset_x = (WIDTH - GAME_SIZE*TILESIZE*2)//3
+            self.draw_label("Trạng thái bắt đầu",x=offset_x, y=120)
+            self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_x=offset_x, offset_y=150)
+            self.draw_grid_lines(offset_x = offset_x, offset_y=150)
 
             # Kết quả parity lưới 1
             if self.parity_result_1:
-                self.draw_label(f"Parity: {self.parity_result_1}", y=80 + GAME_SIZE * TILESIZE + 20,
-                                x=70)
+                self.draw_label(f"Parity: {self.parity_result_1}", y=150 + GAME_SIZE * TILESIZE + 20,
+                                x=offset_x)
 
             # Lưới 2
-            offset2_y = 100 + GAME_SIZE * TILESIZE + 60
-            self.draw_label("Trạng thái đích", y=offset2_y - 20)
-            self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_y=offset2_y)
-            self.draw_grid_lines(offset_y=offset2_y)
+            offset2_x = (WIDTH - GAME_SIZE*TILESIZE*2)//3*2 + GAME_SIZE*TILESIZE
+            self.draw_label("Trạng thái đích",x=offset2_x, y=120)
+            self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2,offset_x=offset2_x, offset_y=150)
+            self.draw_grid_lines(offset_x = offset2_x, offset_y=150)
 
             # Kết quả parity lưới 2
             if self.parity_result_2:
-                self.draw_label(f"Parity: {self.parity_result_2}", y=offset2_y + GAME_SIZE * TILESIZE + 20,
-                                x=70)
+                self.draw_label(f"Parity: {self.parity_result_2}", y=150 + GAME_SIZE * TILESIZE + 20,
+                                x=offset2_x)
 
             self.buttons.draw(self.screen)
             self.heuristic_dropdown.draw(self.screen)
@@ -197,7 +181,7 @@ class Game:
             self.compare_screen_buttons.draw(self.screen)
             
             # Draw current puzzle matrices
-            self.draw_label("Current Starting State:", y=350)
+            self.draw_label("Current Starting State:",x=100,  y=350)
             self.draw_small_grid(self.tiles_grid, x=WIDTH//3 - 80, y=380)
             
             self.draw_label("Current Goal State:", y=350, x=WIDTH*2//3)
@@ -308,15 +292,6 @@ class Game:
                 elif event.key == pygame.K_BACKSPACE:  # Xóa nội dung khi nhấn Backspace
                     self.update_tile_value(0)  # Cập nhật nội dung ô là rỗng
 
-    def shuffle(self):
-        print("Shuffle clicked!")
-
-        self.shuffle_grid(self.tiles_grid)
-        self.shuffle_grid(self.tiles_grid_2)
-
-        self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_y=80)
-        self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_y=100 + GAME_SIZE * TILESIZE + 60)
-
     def solve(self):
         if not self.checked_parity:
             self.show_notification("Vui lòng kiểm tra parity trước khi giải.")
@@ -385,9 +360,10 @@ class Game:
 
         fill_grid(self.tiles_grid)
         fill_grid(self.tiles_grid_2)
-
-        self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_y=80)
-        self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_y=100 + GAME_SIZE * TILESIZE + 60)
+        offset_x = (WIDTH - GAME_SIZE * TILESIZE * 2) // 3
+        offset2_x = (WIDTH - GAME_SIZE * TILESIZE * 2) // 3 * 2 + GAME_SIZE * TILESIZE
+        # self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1,offset_x = offset_x, offset_y=150)
+        # self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_x=offset2_x, offset_y=150)
 
     def get_parity(self, grid):
         flat = [num for row in grid for num in row if num != 0]

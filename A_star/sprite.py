@@ -31,12 +31,13 @@ class Button(pygame.sprite.Sprite):
         return self.rect.collidepoint(mouse_x, mouse_y)
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, text, offset_y=0):
+    def __init__(self, game, x, y, text,offset_x=0, offset_y=0):
         self.groups = game.all_sprites
         pygame.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = pygame.Surface((TILESIZE, TILESIZE))
         self.x, self.y = x, y
+        self.offset_x = offset_x
         self.offset_y = offset_y  # 👈 lưu lại giá trị offset
         self.text = text
         self.rect = self.image.get_rect()
@@ -56,7 +57,7 @@ class Tile(pygame.sprite.Sprite):
             self.image.fill(WHITE)
 
         # Cập nhật vị trí ngay từ đầu
-        self.rect.x = self.x * TILESIZE
+        self.rect.x = self.x * TILESIZE + self.offset_x
         self.rect.y = self.y * TILESIZE + self.offset_y
 
     def update_image(self):
@@ -66,7 +67,7 @@ class Tile(pygame.sprite.Sprite):
         else:
             self.image.fill(WHITE)  # Màu trắng khi không được chọn
     def update(self):
-        self.rect.x = self.x * TILESIZE
+        self.rect.x = self.x * TILESIZE + self.offset_x
         self.rect.y = self.y * TILESIZE + self.offset_y  # 👈 cộng offset_y vào đây
 
     def click(self, mouse_x, mouse_y):
