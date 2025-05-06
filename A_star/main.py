@@ -35,16 +35,17 @@ class Game:
 
     def create_buttons(self):
         """Tạo các nút"""
-        self.setup_button = Button(GAME_SIZE * TILESIZE + 50, 20, 100, 40, "Setup", self.setup)
+        offsetBut_x = (WIDTH - 100 - 20 - 140 - 20 - 120 - 20 - 100- 20 - 200)//2
+        self.setup_button = Button(offsetBut_x, 20, 100, 40, "Setup", self.setup)
 
-        self.check_parity_button = Button(GAME_SIZE*TILESIZE + 50 + 120, 20, 140, 40, "Check Parity", self.check_parity)
+        self.check_parity_button = Button(offsetBut_x+ 120, 20, 140, 40, "Check Parity", self.check_parity)
         self.heuristic_dropdown = Dropdown(
-            GAME_SIZE * TILESIZE + 50 + 120  + 160, 20, 120, 40,
+            offsetBut_x + 120  + 160, 20, 120, 40,
             "Heuristic", [ "Misplaced", "Manhattan","Pattern DB", "Edge Match"],
             self.set_heuristic
         )
-        self.solve_button = Button(GAME_SIZE*TILESIZE + 50 + 120 + 160 + 140, 20, 100, 40, "Solve", self.solve)
-        self.compare_button = Button(GAME_SIZE*TILESIZE + 50+ 120 + 160 + 140 + 120, 20, 200, 40, "Compare Heuristic", self.show_compare_screen)
+        self.solve_button = Button(offsetBut_x + 120 + 160 + 140, 20, 100, 40, "Solve", self.solve)
+        self.compare_button = Button(offsetBut_x + 120 + 160 + 140 + 120, 20, 200, 40, "Compare Heuristic", self.show_compare_screen)
         
         # Thêm các nút vào group
 
@@ -56,7 +57,7 @@ class Game:
         # Buttons for compare screen
         self.compare_screen_buttons = pygame.sprite.Group()
         self.back_button = Button(20, 20, 100, 40, "Back", self.back_to_main)
-        self.start_compare_button = Button(WIDTH - 150, HEIGHT - 60, 130, 40, "Start Compare", self.start_compare)
+        self.start_compare_button = Button(WIDTH - 170, HEIGHT - 60, 150, 40, "Start Compare", self.start_compare)
         self.compare_screen_buttons.add(self.back_button)
         self.compare_screen_buttons.add(self.start_compare_button)
         
@@ -64,18 +65,25 @@ class Game:
         self.checkboxes = pygame.sprite.Group()
         heuristics = ["Misplaced", "Manhattan", "Pattern DB", "Edge Match"]
         for i, h in enumerate(heuristics):
-            cb = Checkbox(WIDTH // 2 - 100, 150 + i * 60, 200, 40, h)
+            cb = Checkbox(WIDTH // 2 - 100, 100 + i * 60, 200, 40, h)
             self.checkboxes.add(cb)
         
         # Results screen buttons
         self.results_screen_buttons = pygame.sprite.Group()
-        self.back_to_compare_button = Button(20, 20, 150, 40, "Back to Compare", self.back_to_compare)
+        self.back_to_compare_button = Button(20, 20, 150, 40, "Back", self.back_to_compare)
         self.results_screen_buttons.add(self.back_to_compare_button)
 
         # Buttons for solve screen
         self.solve_screen_buttons = pygame.sprite.Group()
         self.back_to_main_button = Button(20, 20, 100, 40, "Back", self.back_to_main)
+        self.detail_result_button = Button(WIDTH - 150, HEIGHT - 60, 130, 40, "Detail", self.detail_solve)
         self.solve_screen_buttons.add(self.back_to_main_button)
+        self.solve_screen_buttons.add(self.detail_result_button)
+
+        # Buttons for detail screen
+        self.detail_screen_buttons = pygame.sprite.Group()
+        self.back_to_solve_button = Button(20, 20, 100, 40, "Back", self.back_to_solve)
+        self.detail_screen_buttons.add(self.back_to_solve_button)
 
     def create_game(self):
         grid = [[0 for _ in range(GAME_SIZE)] for _ in range(GAME_SIZE)]
@@ -145,24 +153,25 @@ class Game:
             
             # Lưới 1
             offset_x = (WIDTH - GAME_SIZE*TILESIZE*2)//3
-            self.draw_label("Trạng thái bắt đầu",x=offset_x, y=120)
-            self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_x=offset_x, offset_y=150)
-            self.draw_grid_lines(offset_x = offset_x, offset_y=150)
+            offset_y = (HEIGHT - 60 - GAME_SIZE*TILESIZE)//2
+            self.draw_label("Trạng thái bắt đầu",x=offset_x, y=offset_y-30)
+            self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1, offset_x=offset_x, offset_y=offset_y)
+            self.draw_grid_lines(offset_x = offset_x, offset_y=offset_y)
 
             # Kết quả parity lưới 1
             if self.parity_result_1:
-                self.draw_label(f"Parity: {self.parity_result_1}", y=150 + GAME_SIZE * TILESIZE + 20,
+                self.draw_label(f"Parity: {self.parity_result_1}", y=offset_y + GAME_SIZE * TILESIZE + 20,
                                 x=offset_x)
 
             # Lưới 2
             offset2_x = (WIDTH - GAME_SIZE*TILESIZE*2)//3*2 + GAME_SIZE*TILESIZE
-            self.draw_label("Trạng thái đích",x=offset2_x, y=120)
-            self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2,offset_x=offset2_x, offset_y=150)
-            self.draw_grid_lines(offset_x = offset2_x, offset_y=150)
+            self.draw_label("Trạng thái đích",x=offset2_x, y=offset_y-30)
+            self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2,offset_x=offset2_x, offset_y=offset_y)
+            self.draw_grid_lines(offset_x = offset2_x, offset_y=offset_y)
 
             # Kết quả parity lưới 2
             if self.parity_result_2:
-                self.draw_label(f"Parity: {self.parity_result_2}", y=150 + GAME_SIZE * TILESIZE + 20,
+                self.draw_label(f"Parity: {self.parity_result_2}", y=offset_y + GAME_SIZE * TILESIZE + 20,
                                 x=offset2_x)
 
             self.buttons.draw(self.screen)
@@ -171,8 +180,8 @@ class Game:
         elif self.current_screen == "compare":
             # Draw compare screen UI
             title_font = pygame.font.SysFont("Consolas", 30, bold=True)
-            title = title_font.render("Select Heuristics to Compare", True, BLACK)
-            self.screen.blit(title, (WIDTH//2 - title.get_width()//2, 80))
+            title = title_font.render("Chọn hàm Heuristic để so sánh", True, BLACK)
+            self.screen.blit(title, (WIDTH//2 - title.get_width()//2, 40))
             
             # Draw checkboxes
             self.checkboxes.draw(self.screen)
@@ -181,11 +190,11 @@ class Game:
             self.compare_screen_buttons.draw(self.screen)
             
             # Draw current puzzle matrices
-            self.draw_label("Current Starting State:",x=100,  y=350)
-            self.draw_small_grid(self.tiles_grid, x=WIDTH//3 - 80, y=380)
+            self.draw_label("Trạng thái ban đầu",x=(WIDTH - GAME_SIZE*TILESIZE*2-210)//4,  y=HEIGHT//2 - GAME_SIZE*TILESIZE + 60)
+            self.draw_small_grid(self.tiles_grid, x=(WIDTH - GAME_SIZE*TILESIZE*2-200)//4, y=HEIGHT//2 - GAME_SIZE*TILESIZE//2)
             
-            self.draw_label("Current Goal State:", y=350, x=WIDTH*2//3)
-            self.draw_small_grid(self.tiles_grid_2, x=WIDTH*2//3 - 80, y=380)
+            self.draw_label("Trạng thái đích", x=(WIDTH - GAME_SIZE*TILESIZE*2-210)//4 * 3 + 200 + GAME_SIZE*TILESIZE, y=HEIGHT//2 - GAME_SIZE*TILESIZE + 60)
+            self.draw_small_grid(self.tiles_grid_2, x=(WIDTH - GAME_SIZE*TILESIZE*2-200)//4 * 3 + 200 + GAME_SIZE*TILESIZE, y=HEIGHT//2 - GAME_SIZE*TILESIZE//2)
             
         elif self.current_screen == "results":
             # Draw results UI
@@ -194,7 +203,9 @@ class Game:
         elif self.current_screen == "solve":
             self.solve_screen_buttons.draw(self.screen)
             self.draw_solve_results()
-            
+        elif self.current_screen == "detail":
+            self.detail_screen_buttons.draw(self.screen)
+            self.draw_detail_solve()
         if self.notification_text and time.time() < self.notification_timer:
             font = pygame.font.SysFont("Consolas", 24, bold=True)
             text_surface = font.render(self.notification_text, True, WHITE)
@@ -285,7 +296,10 @@ class Game:
                         self.next_solve_step()
                     if self.solve_result and 'prev_button' in self.solve_result and self.solve_result['prev_button'].click(mx, my):
                         self.prev_solve_step()
-
+                elif self.current_screen == "detail":  # Thêm xử lý cho màn hình detail
+                    for button in self.detail_screen_buttons:
+                        if button.click(mx, my) and button.action:
+                            button.action()
             elif event.type == pygame.KEYDOWN and self.selected_tile and self.current_screen == "main":
                 if event.unicode.isdigit() and event.unicode != "0":
                     self.update_tile_value(int(event.unicode))
@@ -335,8 +349,8 @@ class Game:
         }
         # self.result_data = (path, chiphi, elapsed_time)
 
-    def heuristic(self):
-        print("Heuristic clicked!")
+    # def heuristic(self):
+    #     print("Heuristic clicked!")
 
     def shuffle_grid(self, grid):
         nums = list(range(GAME_SIZE * GAME_SIZE))  # Tạo list từ 0 → 8 (nếu GAME_SIZE = 3)
@@ -360,10 +374,6 @@ class Game:
 
         fill_grid(self.tiles_grid)
         fill_grid(self.tiles_grid_2)
-        offset_x = (WIDTH - GAME_SIZE * TILESIZE * 2) // 3
-        offset2_x = (WIDTH - GAME_SIZE * TILESIZE * 2) // 3 * 2 + GAME_SIZE * TILESIZE
-        # self.draw_tiles_grid(self.tiles_grid, self.tile_objs_grid1,offset_x = offset_x, offset_y=150)
-        # self.draw_tiles_grid(self.tiles_grid_2, self.tile_objs_grid2, offset_x=offset2_x, offset_y=150)
 
     def get_parity(self, grid):
         flat = [num for row in grid for num in row if num != 0]
@@ -379,6 +389,11 @@ class Game:
         if sorted(flat) != list(range(GAME_SIZE * GAME_SIZE)):
             return False
         return True
+
+    def is_valid_grid(self, grid):
+        flat = [num for row in grid for num in row]
+        non_empty = [num for num in flat if num != 0 and num != ""]
+        return len(non_empty) == GAME_SIZE * GAME_SIZE - 1
 
     def check_parity(self):
         print("Check Parity clicked!")
@@ -486,20 +501,35 @@ class Game:
         
     def draw_small_grid(self, grid_data, x, y):
         """Draw a small representation of a grid"""
+        cell_size = TILESIZE
+        for row in range(GAME_SIZE):
+            for col in range(GAME_SIZE):
+                rect = pygame.Rect(x + col * cell_size, y + row * cell_size, cell_size, cell_size)
+                pygame.draw.rect(self.screen, WHITE, rect)
+                pygame.draw.rect(self.screen, RED_DEFAULT, rect, 1)
+                
+                # Draw number
+                if grid_data[row][col] != 0:
+                    font = pygame.font.SysFont("Consolas", 30)
+                    text = font.render(str(grid_data[row][col]), True, BLACK)
+                    text_rect = text.get_rect(center=rect.center)
+                    self.screen.blit(text, text_rect)
+
+    def draw_small_grid_2(self, grid_data, x, y):
+        """Draw a small representation of a grid"""
         cell_size = 30
         for row in range(GAME_SIZE):
             for col in range(GAME_SIZE):
                 rect = pygame.Rect(x + col * cell_size, y + row * cell_size, cell_size, cell_size)
                 pygame.draw.rect(self.screen, WHITE, rect)
-                pygame.draw.rect(self.screen, BLACK, rect, 1)
-                
+                pygame.draw.rect(self.screen, RED_DEFAULT, rect, 1)
+
                 # Draw number
                 if grid_data[row][col] != 0:
                     font = pygame.font.SysFont("Consolas", 20)
                     text = font.render(str(grid_data[row][col]), True, BLACK)
                     text_rect = text.get_rect(center=rect.center)
                     self.screen.blit(text, text_rect)
-                    
     def draw_comparison_results(self):
         """Draw the comparison results screen"""
         if not self.compare_results:
@@ -558,7 +588,7 @@ class Game:
             if result['path']:
                 current_step = self.compare_current_step[result['heuristic']]
                 current_state = result['path'][current_step] if current_step < len(result['path']) else result['path'][-1]
-                self.draw_small_grid(current_state, x + (cell_width - 90) // 2, y + 110)
+                self.draw_small_grid_2(current_state, x + (cell_width - 90) // 2, y + cell_height//2 - 20*3)
                 
                 # Add navigation buttons if solution exists
                 if 'next_button' not in result:
@@ -612,7 +642,7 @@ class Game:
         if self.solve_result['path']:
             current_state = self.solve_result['path'][self.solve_current_step] if self.solve_current_step < len(
                 self.solve_result['path']) else self.solve_result['path'][-1]
-            self.draw_small_grid(current_state, x + (cell_width - 90) // 2, y + 110)
+            self.draw_small_grid(current_state, x= WIDTH//2 - GAME_SIZE*TILESIZE//2, y=y + 110)
 
             if 'next_button' not in self.solve_result:
                 self.solve_result['next_button'] = Button(x + cell_width - 110, y + cell_height - 50, 80, 30, "Next",
@@ -639,7 +669,6 @@ class Game:
             if result['heuristic'] == heuristic and result['path']:
                 if self.compare_current_step[heuristic] < len(result['path']) - 1:
                     self.compare_current_step[heuristic] += 1
-    
     def prev_step(self, heuristic):
         """Move to the previous step in the solution path"""
         for result in self.compare_results:
@@ -647,19 +676,27 @@ class Game:
                 if self.compare_current_step[heuristic] > 0:
                     self.compare_current_step[heuristic] -= 1
 
+#di chuyển trước sau các trạng thái trong đường đi (cửa sổ solve)
     def next_solve_step(self):
         if self.solve_result['path'] and self.solve_current_step < len(self.solve_result['path']) - 1:
             self.solve_current_step += 1
-
     def prev_solve_step(self):
         if self.solve_result['path'] and self.solve_current_step > 0:
             self.solve_current_step -= 1
 
-    def is_valid_grid(self, grid):
-        flat = [num for row in grid for num in row]
-        non_empty = [num for num in flat if num != 0 and num != ""]
-        return len(non_empty) == GAME_SIZE * GAME_SIZE - 1
-
+# cửa sổ hiện chi tiết đường đi (cửa sổ detail_solve)
+    def draw_detail_solve(self):
+        font = pygame.font.SysFont("Consolas", 20, bold=True)
+        name_text = font.render(f"Test Detail", True, BLACK)
+        self.screen.blit(name_text, (100,100))
+    def detail_solve(self):
+        print("Detail")
+        self.current_screen = "detail"
+        self.stop_solver_threads()
+    def back_to_solve(self):
+        print("back Solve")
+        self.current_screen = "solve"
+        self.stop_solver_threads()
 game= Game()
 while True:
     game.new()
