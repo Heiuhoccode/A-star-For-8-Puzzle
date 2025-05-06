@@ -349,9 +349,6 @@ class Game:
         }
         # self.result_data = (path, chiphi, elapsed_time)
 
-    # def heuristic(self):
-    #     print("Heuristic clicked!")
-
     def shuffle_grid(self, grid):
         nums = list(range(GAME_SIZE * GAME_SIZE))  # Tạo list từ 0 → 8 (nếu GAME_SIZE = 3)
         random.shuffle(nums)
@@ -514,7 +511,6 @@ class Game:
                     text = font.render(str(grid_data[row][col]), True, BLACK)
                     text_rect = text.get_rect(center=rect.center)
                     self.screen.blit(text, text_rect)
-
     def draw_small_grid_2(self, grid_data, x, y):
         """Draw a small representation of a grid"""
         cell_size = 30
@@ -676,7 +672,6 @@ class Game:
                 if self.compare_current_step[heuristic] > 0:
                     self.compare_current_step[heuristic] -= 1
 
-#di chuyển trước sau các trạng thái trong đường đi (cửa sổ solve)
     def next_solve_step(self):
         if self.solve_result['path'] and self.solve_current_step < len(self.solve_result['path']) - 1:
             self.solve_current_step += 1
@@ -684,11 +679,40 @@ class Game:
         if self.solve_result['path'] and self.solve_current_step > 0:
             self.solve_current_step -= 1
 
-# cửa sổ hiện chi tiết đường đi (cửa sổ detail_solve)
     def draw_detail_solve(self):
-        font = pygame.font.SysFont("Consolas", 20, bold=True)
-        name_text = font.render(f"Test Detail", True, BLACK)
-        self.screen.blit(name_text, (100,100))
+        """Draw the detailed solution screen with all states in the path"""
+        if not self.solve_result or not self.solve_result['path']:
+            font = pygame.font.SysFont("Consolas", 24)
+            text = font.render("No solution data available", True, BLACK)
+            self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2))
+            return
+
+        # Draw title
+        font = pygame.font.SysFont("Consolas", 30, bold=True)
+        title = font.render(f"Detail of {self.solve_result['heuristic']} Solution", True, BLACK)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 40))
+
+        # Calculate layout
+        cell_size = 90  # Size for each small grid (3x3 with cell_size=30)
+        states_per_row = (WIDTH - 40) // (cell_size + 50)  # Number of states per row, accounting for arrows
+        num_states = len(self.solve_result['path'])
+        rows_needed = (num_states + states_per_row - 1) // states_per_row
+
+        # Draw each state in the path
+        for i, state in enumerate(self.solve_result['path']):
+            row = i // states_per_row
+            col = i % states_per_row
+            x = 20 + col * (cell_size + 50)  # 50px gap for arrows
+            y = 100 + row * (cell_size + 50)  # 50px gap between rows
+
+            # Draw small grid for the state
+            self.draw_small_grid_2(state, x, y)
+
+            # Draw step number
+            stats_font = pygame.font.SysFont("Consolas", 16)
+            step_text = stats_font.render(f"Step {i + 1}", True, BLACK)
+            self.screen.blit(step_text, (x + (cell_size - step_text.get_width()) // 2, y + cell_size + 5))
+
     def detail_solve(self):
         print("Detail")
         self.current_screen = "detail"
@@ -697,6 +721,7 @@ class Game:
         print("back Solve")
         self.current_screen = "solve"
         self.stop_solver_threads()
+
 game= Game()
 while True:
     game.new()
