@@ -37,13 +37,15 @@ def output(node, Nodes_daduyet, doSau):
             if temp.pre == i.curr:
                 temp = i
                 break
-    return result, node.f
+    nodes_duocduyet = len(Nodes_daduyet)
+    return result, node.f, nodes_duocduyet
 doSau = [0]
 Nodes = []
 
 def a_star_search(origin, goal, heuristic_name):
     path = []
     chiphi = 0
+    soNodeDaDuyet = 0
     Eight_Puzzle_Origin = origin
     Eight_Puzzle_Destination =goal
     # for i in origin:
@@ -102,7 +104,7 @@ def a_star_search(origin, goal, heuristic_name):
         if Node_duyet.matrix == Eight_Puzzle_Destination:
             try:
                 cothexuly=1
-                path, chiphi = output(Node_duyet, Nodes_daduyet, doSau)
+                path, chiphi, soNodeDaDuyet = output(Node_duyet, Nodes_daduyet, doSau)
             except:
                 print("Lỗi in ra")
             break
@@ -177,7 +179,7 @@ def a_star_search(origin, goal, heuristic_name):
                 print("Hàm heurisric Edge Match không thể xử lý")
             case _:
                 print("Lỗi chọn option")
-    return path, chiphi
+    return path, chiphi, soNodeDaDuyet
 
 # origin = [[1,2,3],[4,5,6],[7,8,0]]
 # goal = [[1,2,3],[4,5,6],[0,7,8]]

@@ -333,7 +333,7 @@ class Game:
         start_time = time.time()
 
         # Giả sử bạn có hàm a_star_search(start_grid, goal_grid, heuristic)
-        path, chiphi = a_star_search(self.tiles_grid, self.tiles_grid_2, self.current_heuristic)
+        path, chiphi, soNode = a_star_search(self.tiles_grid, self.tiles_grid_2, self.current_heuristic)
         
         if not self.running:
             return  # Check again if game is shutting down
@@ -345,7 +345,7 @@ class Game:
             'path': path[::-1] if path else None,
             'cost': chiphi,
             'time': elapsed_time,
-            'nodes_visited': len(path) if path else 0
+            'nodes_visited': soNode
         }
         # self.result_data = (path, chiphi, elapsed_time)
 
@@ -482,7 +482,7 @@ class Game:
             return  # Exit if game is shutting down
             
         start_time = time.time()
-        path, chiphi = a_star_search(self.tiles_grid, self.tiles_grid_2, heuristic_name)
+        path, chiphi, soNode = a_star_search(self.tiles_grid, self.tiles_grid_2, heuristic_name)
         
         if not self.running:
             return  # Check again if game is shutting down
@@ -495,7 +495,7 @@ class Game:
             'path': path[::-1] if path else None,
             'cost': chiphi,
             'time': elapsed_time,
-            'nodes_visited': len(path) if path else 0,
+            'nodes_visited': soNode,
             'current_step': 0
         }
         
