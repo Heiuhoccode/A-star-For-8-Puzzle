@@ -411,6 +411,12 @@ class Game:
         self.notification_timer = time.time() + duration  # thời gian kết thúc hiển thị
 
     def show_compare_screen(self):
+        if not self.checked_parity:
+            self.show_notification("Vui lòng kiểm tra parity trước khi giải.")
+            return
+        if self.parity_result_1 != self.parity_result_2:
+            self.show_notification("Parity không giống nhau! Không thể giải.")
+            return
         """Switch to the compare screen"""
         self.current_screen = "compare"
         # Reset selected heuristics
