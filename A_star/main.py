@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import sys
 import threading
 from sprite import *
 from setting import *
@@ -257,7 +258,7 @@ class Game:
             if event.type == pygame.QUIT:
                 self.stop_solver_threads()  # Stop all threads before exiting
                 pygame.quit()
-                quit(0)
+                sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
